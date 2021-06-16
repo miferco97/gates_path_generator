@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<launch>
+    <arg name= "namespace"					        default = "drone1"/>
+
+    <group ns="$(arg namespace)">
+        <param name= "~namespace"                        value="$(arg namespace)"                       type="str" />
+        <node name="gates_path_generator" pkg="gates_path_generator" type="gates_path_generator_node" output="screen"/>
+        <node name="aruco_gate_detector" pkg="aruco_gate_detector" type="aruco_gate_detector" output="screen"/>
+    </group>
+
+    <node pkg="tf" 
+        type = "static_transform_publisher" 
+        name = "camera_link_tf" 
+        args = "0.1 0 0.035 -1.57 0 -1.57 base_link camera_link 100" />
+
+</launch>
+

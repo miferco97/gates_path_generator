@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+	<name>gates_path_generator</name>
+	<version>0.0.0</version>
+	<description>The actuator_command_bridge package</description>
+
+	<maintainer email="miguel@todo.todo">carlos</maintainer>
+
+	<license>TODO</license> 
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<depend>roscpp</depend>
+	<depend>std_msgs</depend>
+	<depend>sensor_msgs</depend> 
+	<depend>geometry_msgs</depend>
+	<depend>mavros_msgs</depend>
+	<depend>robot_process</depend>
+	<depend>mav_msgs</depend>
+	<depend>tf</depend>
+	<depend>tf2</depend>
+	<depend>ros_utils_lib</depend>
+
+</package>
