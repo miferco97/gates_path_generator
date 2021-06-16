@@ -120,7 +120,7 @@ void GatesPathGenerator::genManualTraj(const std_msgs::Float32& _speed){
 	
 	float speed = _speed.data;
 	if (speed>0.1 && speed<5.0)
-		waypoints_msgs_.max_speed = 0.5;
+		waypoints_msgs_.max_speed = speed;
 	else
 		waypoints_msgs_.max_speed = 0.5;
 	waypoints_msgs_.poses.clear();
