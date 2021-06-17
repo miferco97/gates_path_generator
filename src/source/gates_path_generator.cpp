@@ -20,6 +20,8 @@ void GatesPathGenerator::ownSetUp()
 	
 	// gates_vector_ = std::vector<geometry_msgs::PoseStamped>(N_GATES);
 	gate2_pub_ = nh_.advertise <geometry_msgs::PoseStamped>("/" + n_space_ + "/" + "debug/pose_aruco2",1);
+	gate1_pub_ = nh_.advertise <geometry_msgs::PoseStamped>("/" + n_space_ + "/" + "debug/pose_aruco1",1);
+
 	tf2_listener_ptr_ = std::make_unique<tf2_ros::TransformListener>(tf2_buffer_);
 
 
@@ -84,6 +86,9 @@ void GatesPathGenerator::publishWaypoints(){
 	for (auto &gate:gates_info_){
 		if(gate.gate_id == 2){
 			gate2_pub_.publish(gate.pose);
+		}
+		if(gate.gate_id == 1){
+			gate1_pub_.publish(gate.pose);
 		}
 	}
 };

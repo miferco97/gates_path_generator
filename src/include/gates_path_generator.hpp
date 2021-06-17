@@ -165,6 +165,7 @@ private:
     std::string self_localization_pose_topic_;
 
     ros::Publisher gate2_pub_;
+    ros::Publisher gate1_pub_;
     // tf2_ros::TransformBroadcaster tf2_broadcaster_;
     tf2_ros::Buffer tf2_buffer_;
     std::unique_ptr<tf2_ros::TransformListener> tf2_listener_ptr_;
