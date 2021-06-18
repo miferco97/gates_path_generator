@@ -55,6 +55,7 @@ void appendSegmentToPath(segmentType& _segment,aerostack_msgs::TrajectoryWaypoin
 void GatesPathGenerator::genTraj(){
 
 	static ros::Time prev_time = ros::Time::now();
+	static bool trajectory_has_changes = false;
 	
 	if (!gates_has_changes) return;
 	gates_has_changes = false;
@@ -63,15 +64,13 @@ void GatesPathGenerator::genTraj(){
 	bool is_inside_a_gate =false; 
 
 	for(auto& gate:gates_info_){
+		generate_new_path |= gate.recalculateSegment(estimated_pose_);
 		is_inside_a_gate |= gate.is_inside;
 	}
-	if (!is_inside_a_gate && (ros::Time::now()-prev_time).toSec()>refresh_rate_){
-		for(auto& gate:gates_info_){
-			generate_new_path |= gate.recalculateSegment(estimated_pose_);
-		}
-	}
-
-	if (generate_new_path && !is_inside_a_gate){
+	// if (!is_inside_a_gate && (ros::Time::now()-prev_time).toSec()>refresh_rate_){
+	trajectory_has_changes |= generate_new_path; 
+	if (trajectory_has_changes && !is_inside_a_gate && (ros::Time::now()-prev_time).toSec()>refresh_rate_){
+		trajectory_has_changes = false;
 		prev_time = ros::Time::now();
 		waypoints_msgs_.poses.clear();
 		for (auto& gate:gates_info_){
@@ -81,6 +80,7 @@ void GatesPathGenerator::genTraj(){
 		}
 		if (waypoints_msgs_.poses.size()>0){
 			traj_waypoints_pub_.publish(waypoints_msgs_);
+			std::cout <<"WAYPOINTS SENDED" << std::endl;
 		}
 	}
 

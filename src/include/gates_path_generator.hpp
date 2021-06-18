@@ -26,7 +26,7 @@
 #define N_GATES 2
 
 #define SPHERE_RADIOUS 1.0f
-#define GATE_POSITION_CHANGE_THRESHOLD 0.25f
+#define GATE_POSITION_CHANGE_THRESHOLD 0.20f
 #define DIST_BETWEEN_POINTS 0.5f
 
 typedef std::vector<Eigen::Vector3f> segmentType; 
@@ -34,10 +34,24 @@ typedef std::vector<Eigen::Vector3f> segmentType;
 struct GateInfo{
 
     GateInfo(int id)
-        :gate_id(id)
-    {
+        :gate_id(id){};
+    
+    GateInfo(int id , bool generate_three_points)
+        :gate_id(id), generate_three_points_(generate_three_points){};
+    
+    GateInfo(int id ,float x, float y, float z , bool generate_three_points)
+        :gate_id(id), generate_three_points_(generate_three_points){
 
-    };
+            pose.header.stamp = ros::Time::now();
+            pose.header.frame_id = "odom";
+            pose.pose.position.x = x;
+            pose.pose.position.y = y;
+            pose.pose.position.z = z;
+            pose.pose.orientation.w = 1.0f;
+
+            has_pose = true;
+        };
+    
 
     int gate_id;
     geometry_msgs::PoseStamped pose;
@@ -46,11 +60,12 @@ struct GateInfo{
     bool has_passed = true;
     bool is_inside = false;
     bool has_pose = false;
+    bool generate_three_points_ = false;
 
     private:
-        const float alpha = 0.03;
+        const float alpha = 0.1;
         bool first_update = true;
-        void calculateGateSegment(const Eigen::Vector3f&  _estimated_pose , bool generate_three_points=true){
+        void calculateGateSegment(const Eigen::Vector3f&  _estimated_pose){
             gate_segment.clear();
 	        if (!has_pose) return;
             Eigen::Vector3f center_point_vec;
@@ -58,7 +73,7 @@ struct GateInfo{
                                 pose.pose.position.y,
                                 pose.pose.position.z;
                 
-            if (generate_three_points){
+            if (generate_three_points_){
                 Eigen::Vector3f same_z_estimated_pose;
                 same_z_estimated_pose << _estimated_pose(0),
                                          _estimated_pose(1),
@@ -71,7 +86,6 @@ struct GateInfo{
                 gate_segment.emplace_back(center_point_vec);
                 gate_segment.emplace_back(after_point_vec);
                 
-
             }else{
                 gate_segment.emplace_back(center_point_vec);
             }
@@ -101,7 +115,7 @@ struct GateInfo{
                 is_inside_now = false;
             }
             else if(gate_segment.size()==3){
-                is_inside_now= (gate_segment.at(1)-estimated_pose).norm()< SPHERE_RADIOUS;
+                is_inside_now= (gate_segment.at(1)-estimated_pose).norm()< 1*(DIST_BETWEEN_POINTS +SPHERE_RADIOUS);
 
             }
             else if(gate_segment.size()==1){
@@ -123,7 +137,6 @@ struct GateInfo{
                 calculateGateSegment(estimated_pose);
                 return true;
             }
-            
             else if(gate_segment.size()==3){                
                 auto pose = getVectorPose();
                 if ((gate_segment.at(1)-pose).norm()>GATE_POSITION_CHANGE_THRESHOLD){
@@ -138,6 +151,8 @@ struct GateInfo{
                     return true;
                 }
                 
+            }else{
+                std::cout<<" CHECK GATE SEGMENTS SIZE " << std::endl;
             }
             return false;   
         }
