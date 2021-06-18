@@ -9,9 +9,9 @@ void GatesPathGenerator::ownSetUp()
 	ros_utils_lib::getPrivateParam<std::string>("~traj_waypoints_topic"		    , traj_waypoints_topic_			,"motion_reference/waypoints");
 	ros_utils_lib::getPrivateParam<std::string>("~self_localization_pose_topic" , self_localization_pose_topic_ ,"self_localization/pose");
 
-	// gates_id_.emplace_back(2);
 	// gates_info_.clear();
 	gates_info_.emplace_back(2);
+	gates_info_.emplace_back(1);
 
 	gates_sub_ = nh_.subscribe("/" + n_space_ + "/" + gates_topic_ ,1, &GatesPathGenerator::gatesCallback,this);
 	pose_sub_ = nh_.subscribe("/" + n_space_ + "/" + self_localization_pose_topic_ ,1, &GatesPathGenerator::poseCallback,this);
@@ -54,7 +54,7 @@ void appendSegmentToPath(segmentType& _segment,aerostack_msgs::TrajectoryWaypoin
 
 void GatesPathGenerator::genTraj(){
 
-	// static ros::Time prev_time = ros::Time::now();
+	static ros::Time prev_time = ros::Time::now();
 	
 	if (!gates_has_changes) return;
 	gates_has_changes = false;
@@ -63,10 +63,16 @@ void GatesPathGenerator::genTraj(){
 	bool is_inside_a_gate =false; 
 
 	for(auto& gate:gates_info_){
-		generate_new_path |= gate.recalculateSegment(estimated_pose_);
 		is_inside_a_gate |= gate.is_inside;
 	}
+	if (!is_inside_a_gate && (ros::Time::now()-prev_time).toSec()>refresh_rate_){
+		for(auto& gate:gates_info_){
+			generate_new_path |= gate.recalculateSegment(estimated_pose_);
+		}
+	}
+
 	if (generate_new_path && !is_inside_a_gate){
+		prev_time = ros::Time::now();
 		waypoints_msgs_.poses.clear();
 		for (auto& gate:gates_info_){
 			if (!gate.has_passed){

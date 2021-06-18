@@ -26,7 +26,7 @@
 #define N_GATES 2
 
 #define SPHERE_RADIOUS 1.0f
-#define GATE_POSITION_CHANGE_THRESHOLD 0.20f
+#define GATE_POSITION_CHANGE_THRESHOLD 0.25f
 #define DIST_BETWEEN_POINTS 0.5f
 
 typedef std::vector<Eigen::Vector3f> segmentType; 
@@ -45,13 +45,15 @@ struct GateInfo{
     segmentType gate_segment;
     bool has_passed = true;
     bool is_inside = false;
+    bool has_pose = false;
 
     private:
-        const float alpha = 0.1;
+        const float alpha = 0.03;
         bool first_update = true;
         void calculateGateSegment(const Eigen::Vector3f&  _estimated_pose , bool generate_three_points=true){
             gate_segment.clear();
-	        Eigen::Vector3f center_point_vec;
+	        if (!has_pose) return;
+            Eigen::Vector3f center_point_vec;
             center_point_vec << pose.pose.position.x,
                                 pose.pose.position.y,
                                 pose.pose.position.z;
@@ -64,7 +66,7 @@ struct GateInfo{
                 
                 Eigen::Vector3f v_director = (center_point_vec - same_z_estimated_pose).normalized(); 
                 Eigen::Vector3f before_point_vec = center_point_vec - DIST_BETWEEN_POINTS * (v_director); 
-                Eigen::Vector3f after_point_vec = center_point_vec + DIST_BETWEEN_POINTS * (v_director); 
+                Eigen::Vector3f after_point_vec = center_point_vec + 3*DIST_BETWEEN_POINTS * (v_director); 
                 gate_segment.emplace_back(before_point_vec);
                 gate_segment.emplace_back(center_point_vec);
                 gate_segment.emplace_back(after_point_vec);
@@ -77,6 +79,7 @@ struct GateInfo{
     public:
 
     void updatePose(const geometry_msgs::PoseStamped& new_pose){
+        has_pose=true;
         if (first_update){
             pose = new_pose;
             first_update = false;
@@ -98,7 +101,7 @@ struct GateInfo{
                 is_inside_now = false;
             }
             else if(gate_segment.size()==3){
-                is_inside_now= (gate_segment.at(1)-estimated_pose).norm()<(DIST_BETWEEN_POINTS+SPHERE_RADIOUS);
+                is_inside_now= (gate_segment.at(1)-estimated_pose).norm()< SPHERE_RADIOUS;
 
             }
             else if(gate_segment.size()==1){
