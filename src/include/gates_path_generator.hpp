@@ -39,8 +39,8 @@ struct GateInfo{
     GateInfo(int id , bool generate_three_points)
         :gate_id(id), generate_three_points_(generate_three_points){};
     
-    GateInfo(int id ,float x, float y, float z , bool generate_three_points)
-        :gate_id(id), generate_three_points_(generate_three_points){
+    GateInfo(int id ,float x, float y, float z , bool generate_three_points, bool is_final_point=false)
+        :gate_id(id), generate_three_points_(generate_three_points), is_final_point_(is_final_point){
 
             pose.header.stamp = ros::Time::now();
             pose.header.frame_id = "odom";
@@ -50,7 +50,9 @@ struct GateInfo{
             pose.pose.orientation.w = 1.0f;
 
             has_pose = true;
+            first_update = false;
         };
+
     
 
     int gate_id;
@@ -60,10 +62,11 @@ struct GateInfo{
     bool has_passed = true;
     bool is_inside = false;
     bool has_pose = false;
+    bool is_final_point_ = false;
     bool generate_three_points_ = false;
 
     private:
-        const float alpha = 0.1;
+        const float alpha = 0.05;
         bool first_update = true;
         void calculateGateSegment(const Eigen::Vector3f&  _estimated_pose){
             gate_segment.clear();
@@ -73,12 +76,13 @@ struct GateInfo{
                                 pose.pose.position.y,
                                 pose.pose.position.z;
                 
-            if (generate_three_points_){
+            if (generate_three_points_ && ((_estimated_pose - center_point_vec)).norm()< 3.0f){
+
                 Eigen::Vector3f same_z_estimated_pose;
                 same_z_estimated_pose << _estimated_pose(0),
                                          _estimated_pose(1),
                                          center_point_vec(2);
-                
+
                 Eigen::Vector3f v_director = (center_point_vec - same_z_estimated_pose).normalized(); 
                 Eigen::Vector3f before_point_vec = center_point_vec - DIST_BETWEEN_POINTS * (v_director); 
                 Eigen::Vector3f after_point_vec = center_point_vec + 3*DIST_BETWEEN_POINTS * (v_director); 
@@ -110,6 +114,7 @@ struct GateInfo{
     }
 
     bool checkIsInside(const Eigen::Vector3f& estimated_pose){
+        if (is_final_point_) return false;
         bool is_inside_now = false;
         if (gate_segment.size()==0){
                 is_inside_now = false;
@@ -132,7 +137,7 @@ struct GateInfo{
 
     bool recalculateSegment(const Eigen::Vector3f& estimated_pose){
             checkIsInside(estimated_pose);
-            if (is_inside) return false;
+            if (is_inside && !is_final_point_) return false;
             if (gate_segment.size()==0){
                 calculateGateSegment(estimated_pose);
                 return true;

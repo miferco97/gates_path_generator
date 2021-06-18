@@ -10,8 +10,13 @@ void GatesPathGenerator::ownSetUp()
 	ros_utils_lib::getPrivateParam<std::string>("~self_localization_pose_topic" , self_localization_pose_topic_ ,"self_localization/pose");
 
 	// gates_info_.clear();
-	gates_info_.emplace_back(2);
-	gates_info_.emplace_back(1);
+	// gates_info_.emplace_back(13,0.5,-0.5,1.3,false);
+	gates_info_.emplace_back(2,true);
+	// gates_info_.emplace_back(10,4.5,-3.0,1.3,false);
+	gates_info_.emplace_back(1,4.5,-3.0,1.3,true);
+	gates_info_.emplace_back(11,3.0,-5.0,1.3,false);
+	gates_info_.emplace_back(12,0.0,-3.0,1.3,false);
+	gates_info_.emplace_back(13,0.5,-0.5,1.3,false,true);
 
 	gates_sub_ = nh_.subscribe("/" + n_space_ + "/" + gates_topic_ ,1, &GatesPathGenerator::gatesCallback,this);
 	pose_sub_ = nh_.subscribe("/" + n_space_ + "/" + self_localization_pose_topic_ ,1, &GatesPathGenerator::poseCallback,this);
@@ -57,8 +62,8 @@ void GatesPathGenerator::genTraj(){
 	static ros::Time prev_time = ros::Time::now();
 	static bool trajectory_has_changes = false;
 	
-	if (!gates_has_changes) return;
-	gates_has_changes = false;
+	// if (!gates_has_changes) return;
+	// gates_has_changes = false;
 
 	bool generate_new_path = false;
 	bool is_inside_a_gate =false; 
@@ -69,7 +74,10 @@ void GatesPathGenerator::genTraj(){
 	}
 	// if (!is_inside_a_gate && (ros::Time::now()-prev_time).toSec()>refresh_rate_){
 	trajectory_has_changes |= generate_new_path; 
-	if (trajectory_has_changes && !is_inside_a_gate && (ros::Time::now()-prev_time).toSec()>refresh_rate_){
+	// if (trajectory_has_changes && !is_inside_a_gate && (ros::Time::now()-prev_time).toSec()>refresh_rate_){
+	if (trajectory_has_changes && !is_inside_a_gate){
+		// std::cout <<"in if" << std::endl;
+
 		trajectory_has_changes = false;
 		prev_time = ros::Time::now();
 		waypoints_msgs_.poses.clear();
@@ -161,7 +169,6 @@ void GatesPathGenerator::gatesCallback(const nav_msgs::Path& _msg){
 				for (auto& gate:gates_info_){
 					if(gate.gate_id == id+1){
 						// std::cout << "gate with id:" << id+1<< " pose_updated" <<std::endl;
-						
 						gate.updatePose(pose);
 						
 						gates_has_changes = true;
