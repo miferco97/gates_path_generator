@@ -85,7 +85,7 @@ struct GateInfo{
 
                 Eigen::Vector3f v_director = (center_point_vec - same_z_estimated_pose).normalized(); 
                 Eigen::Vector3f before_point_vec = center_point_vec - DIST_BETWEEN_POINTS * (v_director); 
-                Eigen::Vector3f after_point_vec = center_point_vec + 3*DIST_BETWEEN_POINTS * (v_director); 
+                Eigen::Vector3f after_point_vec = center_point_vec + DIST_BETWEEN_POINTS * (v_director); 
                 gate_segment.emplace_back(before_point_vec);
                 gate_segment.emplace_back(center_point_vec);
                 gate_segment.emplace_back(after_point_vec);
@@ -96,16 +96,27 @@ struct GateInfo{
         };
     public:
 
+    void filterPose(const geometry_msgs::PoseStamped& _new_pose){
+        Eigen::Vector3f new_pose(_new_pose.pose.position.x,_new_pose.pose.position.y,_new_pose.pose.position.z);
+        auto last_pose = getVectorPose();
+        if ((new_pose-last_pose).norm() > GATE_POSITION_CHANGE_THRESHOLD/2){
+            new_pose = last_pose + (new_pose-last_pose).normalized()*GATE_POSITION_CHANGE_THRESHOLD/2;
+        }
+        
+        pose.header= _new_pose.header;
+        pose.pose.position.x = pose.pose.position.x * (1-alpha) + new_pose(0)* (alpha);
+        pose.pose.position.y = pose.pose.position.y * (1-alpha) + new_pose(1)* (alpha);
+        pose.pose.position.z = pose.pose.position.z * (1-alpha) + new_pose(2)* (alpha);
+        
+    }
+
     void updatePose(const geometry_msgs::PoseStamped& new_pose){
         has_pose=true;
         if (first_update){
             pose = new_pose;
             first_update = false;
         }else{
-            pose.header= new_pose.header;
-            pose.pose.position.x = pose.pose.position.x * (1-alpha) + new_pose.pose.position.x* (alpha);
-            pose.pose.position.y = pose.pose.position.y * (1-alpha) + new_pose.pose.position.y* (alpha);
-            pose.pose.position.z = pose.pose.position.z * (1-alpha) + new_pose.pose.position.z* (alpha);
+            filterPose(new_pose);
         }
     }
 
@@ -120,7 +131,7 @@ struct GateInfo{
                 is_inside_now = false;
             }
             else if(gate_segment.size()==3){
-                is_inside_now= (gate_segment.at(1)-estimated_pose).norm()< 1*(DIST_BETWEEN_POINTS +SPHERE_RADIOUS);
+                is_inside_now= (gate_segment.at(1)-estimated_pose).norm()< 1*(SPHERE_RADIOUS);
 
             }
             else if(gate_segment.size()==1){

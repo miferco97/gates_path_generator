@@ -81,9 +81,12 @@ void GatesPathGenerator::genTraj(){
 		trajectory_has_changes = false;
 		prev_time = ros::Time::now();
 		waypoints_msgs_.poses.clear();
+		int n_points = 0;
 		for (auto& gate:gates_info_){
 			if (!gate.has_passed){
 				appendSegmentToPath(gate.gate_segment,waypoints_msgs_);
+				n_points++;
+				// if (n_points>=2) break;
 			}
 		}
 		if (waypoints_msgs_.poses.size()>0){
